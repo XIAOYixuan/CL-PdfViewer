@@ -1,8 +1,11 @@
-import { Alert, Button, Divider, Space } from 'antd';
+import { Alert, Button, Divider, Space, Menu, Dropdown } from 'antd';
 import FileItem from '../../constants/fileItem';
 import FileCard from '../fileCard';
 import FileUpload from '../upload';
 import { GithubOutlined, SettingOutlined } from '@ant-design/icons';
+import fetchRequest from '../../utils/fetch';
+import request from '../../utils/request';
+import eventEmitter from '../../utils/eventEmitter';
 
 interface SideMenuProps {
   fileList: FileItem[];
@@ -13,6 +16,19 @@ interface SideMenuProps {
 
 const disableUpload = import.meta.env.VITE_DISABLED_UPLOAD;
 
+const handleFileDeletion = async (item: FileItem) => {
+  try {
+    console.log("delete file: " + item.name);
+    const res = await request(`/api/delete?file=${item.name}`, {
+      method: 'GET',
+    });
+    eventEmitter.emit('refreshFileList');
+
+  } catch (error) {
+    console.log('Failed to delete file:', error);
+  }
+};
+
 export default function SideMenu({
   fileList,
   onFileClick,
@@ -22,13 +38,15 @@ export default function SideMenu({
   return (
     <div className="flex flex-col w-[250px] h-full  bg-white py-4 px-2 justify-between">
       <div className="flex-1 overflow-auto">
-        {fileList.map((item) => (
+        {fileList.map((item)   => (
+          <div key={item.name}>
           <FileCard
-            key={item.name}
+            item={item}
             active={activeFile === item.name}
             onClick={() => onFileClick(item)}
-            item={item}
+            onRightClick={handleFileDeletion}
           />
+          </div>
         ))}
       </div>
 
@@ -40,7 +58,7 @@ export default function SideMenu({
           description={
             <>
               The upload is not available on the current website. You can
-              <a href="https://github.com/3Alan/DocsMind" target="__blank">
+              <a href="https://github.com/XIAOYixuan/CL-PdfViewer" target="__blank">
                 {' '}
                 fork and clone the project{' '}
               </a>
@@ -53,11 +71,11 @@ export default function SideMenu({
       )}
 
       <div className="mt-2 flex justify-between items-center">
-        <span className="text-xs text-gray-500">Made by Alan</span>
+        <span className="text-xs text-gray-500">CL PdfViewer</span>
 
         <Space>
           <Button
-            href="https://github.com/3Alan/DocsMind"
+            href="https://github.com/XIAOYixuan/CL-PdfViewer"
             target="__blank"
             icon={<GithubOutlined />}
           ></Button>

@@ -34,13 +34,21 @@ export default function SettingsModal({ open, onChange }: SettingsModalProps) {
       <Form
         form={form}
         initialValues={{
-          apiKey: settings.current?.apiKey
+          apiKey: settings.current?.apiKey,
+          major: settings.current?.major // assuming the major is stored in settings.current.major
         }}
       >
         <Form.Item
           label="apiKey"
           name="apiKey"
           rules={[{ required: true, message: 'Please input your apiKey!' }]}
+        >
+          <Input />
+        </Form.Item>
+        <Form.Item
+          label="Major"
+          name="major"
+          rules={[{ required: true, message: 'Please input your major!' }]} // adjust the rules as needed
         >
           <Input />
         </Form.Item>

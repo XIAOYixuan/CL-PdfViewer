@@ -141,12 +141,13 @@ def query_index():
     # there's no duplicate file name
     index_name = request.args.get("index") 
     open_ai_key = request.args.get("openAiKey")
-    major = "Linguistics"
+    major = request.args.get("userMajor") 
 
     # for debug
     print("-------- query text: ", query_text)
     print("-------- index name: ", index_name)
     print("-------- open ai key: ", open_ai_key)
+    print("-------- user major: ", major)
     if open_ai_key:
         os.environ["OPENAI_API_KEY"] = open_ai_key
         openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -194,19 +195,17 @@ def query_index():
 def upload_file():
     filepath = None
     try:
-        open_ai_key = request.form["openAiKey"]
-        if open_ai_key:
-            os.environ["OPENAI_API_KEY"] = open_ai_key
-
         uploaded_file = request.files["file"]
         filename = uploaded_file.filename
         print(os.getcwd(), os.path.abspath(__file__))
-        filepath = os.path.join(f"{staticPath}/temp", os.path.basename(filename))
+        # directly upload the pdf to static, don't extract index
+        filepath = os.path.join(f"{staticPath}/file", os.path.basename(filename))
+        #filepath = os.path.join(f"{staticPath}/temp", os.path.basename(filename))
         uploaded_file.save(filepath)
+        print("--- debug: ", filepath, filename)
 
-        token_usage = create_index(filepath, filename)
+        #token_usage = create_index(filepath, filename)
         #print(type(token_usage))
-        token_usage = 0
     except Exception as e:
         logger.error(e, exc_info=True)
         # cleanup temp file
@@ -214,20 +213,13 @@ def upload_file():
         if filepath is not None and os.path.exists(filepath):
             os.remove(filepath)
 
-        # 用完了就删掉，防止key被反复使用
-        if open_ai_key:
-            os.environ["OPENAI_API_KEY"] = ""
         return "Error: {}".format(str(e)), 500
 
     # cleanup temp file
-    if filepath is not None and os.path.exists(filepath):
-        os.remove(filepath)
+    #if filepath is not None and os.path.exists(filepath):
+    #    os.remove(filepath)
 
-    # 用完了就删掉，防止key被反复使用
-    if open_ai_key:
-        os.environ["OPENAI_API_KEY"] = ""
-
-    return jsonify(token_usage), 200
+    return jsonify("ok"), 200
 
 
 @app.route("/api/index-list", methods=["GET"])
@@ -253,6 +245,17 @@ def get_html_files():
 
     return sorted(file_list, key=lambda x: x["name"].lower())
 
+@app.route("/api/delete", methods=["GET"])
+def delete_file():
+    filename = request.args.get("file") + ".pdf"
+    # directly upload the pdf to static, don't extract index
+    filepath = os.path.join(f"{staticPath}/file", os.path.basename(filename))
+    filepath = os.path.abspath(filepath)
+    if os.path.exists(filepath):
+        os.remove(filepath)
+    else:
+        print("The file does not exist")
+    return "ok"
 
 if __name__ == "__main__":
     app.run()

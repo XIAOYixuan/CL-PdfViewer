@@ -6,6 +6,7 @@ import { FC, Fragment, KeyboardEvent, useEffect, useLayoutEffect, useRef, useSta
 import eventEmitter from '../../utils/eventEmitter';
 import fetchRequest from '../../utils/fetch';
 import useOpenAiKey from '../../utils/useOpenAiKey';
+import loadUserMajor from '../../utils/loadUserMajor';
 import { MessageItem } from './constants';
 import Message from './Message';
 
@@ -31,7 +32,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
   const [query, setQuery] = useState('');
   const [messageList, setMessageList] = useState<MessageItem[]>([]);
   const openAiKey = useOpenAiKey();
-
+  const userMajor = loadUserMajor();
+  //console.log("userMajor: " + userMajor);
   function cleanChat() {
     setMessageList([]);
   }
@@ -85,7 +87,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
         res = await fetchRequest('/api/query', {
           query: value,
           index: fileName,
-          openAiKey
+          openAiKey,
+          userMajor
         });
       }
 
@@ -150,6 +153,11 @@ const ChatWindow: FC<ChatWindowProps> = ({
       message.error('Please set your openAI key');
       return;
     }
+    
+    if (!userMajor) {
+      message.error('Please enter your major');
+      return;
+    }
 
     setQuery('');
     setMessageList([...messageList, { question: query }, { reply: '' }]);
@@ -161,18 +169,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
 
     if (e.key === 'Enter') {
       e.preventDefault();
+      // send the msg to api and query
       onSearch();
-    }
-  };
-
-  const onSummarize = async () => {
-    setMessageList([...messageList, { question: 'Summarize the Document' }, { reply: '' }]);
-    onReply('', true);
-  };
-
-  const onSummarizeClick = () => {
-    if (!isEmpty(fileName)) {
-      onSummarize();
     }
   };
 
@@ -188,20 +186,6 @@ const ChatWindow: FC<ChatWindowProps> = ({
         padding: '24px 0'
       }}
       title={fileName ? `Chat with ${fileName}` : 'Select File'}
-      extra={
-        <Popconfirm
-          disabled={!openAiKey}
-          title="This will consume a large amount of tokens"
-          description="Do you want to continue?"
-          okText="Yes"
-          cancelText="No"
-          onConfirm={onSummarizeClick}
-        >
-          <Tooltip title="Summarize">
-            <Button icon={<ProfileOutlined />} disabled={!openAiKey}></Button>
-          </Tooltip>
-        </Popconfirm>
-      }
       bordered={false}
     >
       <div ref={chatWindowRef} className="flex flex-col items-start flex-1 overflow-auto px-6">
@@ -225,9 +209,9 @@ const ChatWindow: FC<ChatWindowProps> = ({
       <div className="p-4 pb-0 border-t border-t-gray-200 border-solid border-x-0 border-b-0">
         <div className="relative">
           <Input.TextArea
-            disabled={loading || !openAiKey}
+            disabled={loading || !openAiKey || !userMajor}
             size="large"
-            placeholder={openAiKey ? 'Input your question' : 'Configure your OpenAI key'}
+            placeholder={openAiKey && userMajor? 'Input your question' : 'Configure your OpenAI key and major first'}
             value={query}
             className="pr-[36px]"
             onKeyDown={onKeyDown}

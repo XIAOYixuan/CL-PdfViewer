@@ -3,7 +3,7 @@ import { message, Spin, Upload } from 'antd';
 import { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { baseURL } from '../../utils/request';
-import useOpenAiKey from '../../utils/useOpenAiKey';
+import useOpenAiKey from '../../utils/loadUserMajor';
 import eventEmitter from '../../utils/eventEmitter';
 
 const { Dragger } = Upload;
@@ -25,9 +25,9 @@ export default function FileUpload() {
     setUploading(true);
     const { status } = info.file;
     if (status === 'done' || status === 'success') {
-      generateConfetti();
+      //generateConfetti();
       void message.success({
-        content: `${info.file.name} file uploaded successfully. token usage: 💰 ${info.file.response}`,
+        content: `${info.file.name} file uploaded successfully.`,
         duration: 8
       });
       eventEmitter.emit('refreshFileList');
@@ -45,19 +45,17 @@ export default function FileUpload() {
       <Spin spinning={uploading}>
         <Dragger
           action={`${baseURL}/api/upload`}
-          data={{ openAiKey }}
           multiple={false}
           showUploadList={false}
           name="file"
-          accept=".md,.pdf"
+          accept=".pdf"
           onChange={onUploadChange}
-          disabled={!openAiKey}
         >
           <p className="text-blue-500">
             <InboxOutlined style={{ fontSize: 32 }} />
           </p>
           <p className="text-sm">Click or drag file to this area to upload</p>
-          <p className="text-xs text-gray-400">Support .md,.pdf</p>
+          <p className="text-xs text-gray-400">Support .pdf</p>
         </Dragger>
       </Spin>
     </div>
