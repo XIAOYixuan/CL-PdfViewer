@@ -15,6 +15,7 @@ interface ChatWindowProps {
   className?: string;
   onReplyComplete: (data: any) => void;
   onSourceClick: (data: any) => void;
+  selectedText: string;
 }
 
 const ChatWindow: FC<ChatWindowProps> = ({
@@ -22,7 +23,8 @@ const ChatWindow: FC<ChatWindowProps> = ({
   fullFileName,
   className,
   onReplyComplete,
-  onSourceClick
+  onSourceClick,
+  selectedText,
 }) => {
   const chatWindowRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
@@ -40,7 +42,13 @@ const ChatWindow: FC<ChatWindowProps> = ({
     return () => {
       eventEmitter.off('cleanChat', cleanChat);
     };
-  }, []);
+  }, [])
+  
+  useEffect(() => {
+    if (selectedText !== '') {
+      setQuery(selectedText);
+    }
+  }, [selectedText]);
 
   useLayoutEffect(() => {
     requestAnimationFrame(() => scrollToBottom());

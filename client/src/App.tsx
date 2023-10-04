@@ -15,6 +15,7 @@ const App = () => {
   const [fileList, setFileList] = useState<FileItem[]>([]);
   const [showSettingModal, setShowSettingModal] = useState(false);
 
+  // open the first file in the list by default
   async function getFileList() {
     const res = await request('/api/file-list');
     setFileList(res.data);
@@ -42,6 +43,7 @@ const App = () => {
     };
   }, []);
 
+  // SettingsModal is used to set the open-ai api key
   return (
     <BrowserRouter>
       <main className="bg-slate-100 h-screen flex">

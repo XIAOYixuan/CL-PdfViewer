@@ -47,6 +47,7 @@ async function downloadFile(fileItem: FileItem) {
 const Home = () => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [selectedText, setSelectedText] = useState<string>('');
   const currentFile = useContext(CurrentFileContext);
 
   useEffect(() => {
@@ -66,6 +67,8 @@ const Home = () => {
   }
 
   function handleHighLight(item: any, time = 400) {
+    // we won't highlight srcs cuz we don't use the index mdl
+    return;
     if (isEmpty(item)) {
       return;
     }
@@ -84,7 +87,7 @@ const Home = () => {
         {file ? (
           <>
             {isPdf(currentFile?.ext || '') ? (
-              <PdfViewer file={file} />
+              <PdfViewer file={file} onTextSelect={setSelectedText}/>
             ) : (
               <HtmlViewer html={file} loading={loading} />
             )}
@@ -105,6 +108,7 @@ const Home = () => {
         className="flex flex-col"
         onReplyComplete={handleHighLight}
         onSourceClick={(item) => handleHighLight(item, 0)}
+        selectedText = {selectedText}
       />
     </div>
   );
