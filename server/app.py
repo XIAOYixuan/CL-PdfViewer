@@ -1,10 +1,12 @@
 import json
 import logging
 import os
+import time
 from pathlib import Path
 
 import openai
 from create_index import create_index
+from gp4_wrapper import DialogManager 
 from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, request, stream_with_context
 from flask_cors import CORS
@@ -18,8 +20,8 @@ from llama_index import (
 )
 from llama_index.optimization.optimizer import SentenceEmbeddingOptimizer
 
-openai_proxy = os.environ.get("OPENAI_PROXY", "https://api.openai.com/v1")
-openai.api_base = openai_proxy
+#openai_proxy = os.environ.get("OPENAI_PROXY", "https://api.openai.com/v1")
+#openai.api_base = openai_proxy
 
 
 staticPath = "static"
@@ -125,45 +127,69 @@ def summarize_index():
 
     return Response(stream_with_context(response_generator()))
 
-
+# Edit by Yixuan
+#TODO: storing the DialogHistoryManager for each index might not be scalable, 
+# here we assume it's for single user, so we can use a global variable 
+# to store the history for each index
+#TODO: reset the dataase when user delete the pdf file
+id2chatbot = {}
 @app.route("/api/query", methods=["GET"])
 def query_index():
-    query_text = request.args.get("query")
-    index_name = request.args.get("index")
+    # the current prompt text, it would be concatenated with the history
+    query_text = request.args.get("query") 
+    # the pdf file name, currently we assume index is unique
+    # there's no duplicate file name
+    index_name = request.args.get("index") 
     open_ai_key = request.args.get("openAiKey")
+    major = "Linguistics"
+
+    # for debug
+    print("-------- query text: ", query_text)
+    print("-------- index name: ", index_name)
+    print("-------- open ai key: ", open_ai_key)
     if open_ai_key:
         os.environ["OPENAI_API_KEY"] = open_ai_key
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+    else:
+        openai.api_key = ""
 
-    index = GPTSimpleVectorIndex.load_from_disk(f"{staticPath}/index/{index_name}.json")
+    if index_name not in id2chatbot:
+        chatbot = DialogManager(file_path=f"{staticPath}/db/{index_name}.db",
+                                major=major)
+        id2chatbot[index_name] = chatbot
+    else:
+        chatbot = id2chatbot[index_name]
 
-    # predictor cost
-    llm_predictor = MockLLMPredictor(max_tokens=256)
-    embed_model = MockEmbedding(embed_dim=1536)
-    service_context = ServiceContext.from_defaults(
-        llm_predictor=llm_predictor, embed_model=embed_model
-    )
-    # 不支持 streaming，所以需要另外执行
-    index.query(query_text, service_context=service_context)
+    response = chatbot.get_response(query=query_text, 
+                                    major=major)
+    #response = chatbot.debug(query_text, "explain")
 
-    res = index.query(query_text, streaming=True)
-    cost = embed_model.last_token_usage + llm_predictor.last_token_usage
-    sources = [
-        {"extraInfo": x.node.extra_info, "text": x.node.text} for x in res.source_nodes
-    ]
-
-    def response_generator():
-        yield json.dumps({"cost": cost, "sources": sources})
+    # stream api response config
+    delay_time = 0.01
+    
+    def response_gen():
+        yield json.dumps({"cost": 0, "sources": ""})
         yield "\n ###endjson### \n\n"
-        for text in res.response_gen:
-            yield text
+        full_text = ""
+        for event in response:
+            event_text = event["choices"][0]["delta"]
+            answer = event_text.get("content", "")
+            time.sleep(delay_time)
+            full_text += answer
+            yield answer
+        chatbot.collect_response(full_text)
 
-    # 用完了就删掉，防止key被反复使用
     if open_ai_key:
         os.environ["OPENAI_API_KEY"] = ""
 
-    return Response(stream_with_context(response_generator()))
+    return Response(stream_with_context(response_gen()))
 
-
+# Edit by Yixuan
+# Upload the file locally and create the index
+# The original code would create them via another indexing model for text
+# sumaarization, which is not in use in our project, so we delete it.
+# However, at the client side, we still need the json file to generate the 
+# file list for the side menu. 
 @app.route("/api/upload", methods=["POST"])
 def upload_file():
     filepath = None
@@ -179,6 +205,8 @@ def upload_file():
         uploaded_file.save(filepath)
 
         token_usage = create_index(filepath, filename)
+        #print(type(token_usage))
+        token_usage = 0
     except Exception as e:
         logger.error(e, exc_info=True)
         # cleanup temp file

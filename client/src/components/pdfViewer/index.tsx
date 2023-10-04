@@ -66,7 +66,7 @@ export default function PdfViewer({ file, onTextSelect }: { file: Blob, onTextSe
   
   function onExemplifyClick() {
     //alert(selectedText);
-    onTextSelect("::exemplify::" + selectedText);
+    onTextSelect("::eg::" + selectedText);
     setShowContextMenu(false);
   }
   
