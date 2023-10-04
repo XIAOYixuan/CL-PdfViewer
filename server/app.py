@@ -6,7 +6,7 @@ from pathlib import Path
 
 import openai
 from create_index import create_index
-from gp4_wrapper import DialogManager 
+from gpt4_wrapper import DialogManager 
 from dotenv import load_dotenv
 from flask import Flask, Response, jsonify, request, stream_with_context
 from flask_cors import CORS
@@ -163,6 +163,7 @@ def query_index():
 
     response = chatbot.get_response(query=query_text, 
                                     major=major)
+    print("-------- response: ", response)
     #response = chatbot.debug(query_text, "explain")
 
     # stream api response config

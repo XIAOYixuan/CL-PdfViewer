@@ -297,8 +297,6 @@ class DialogManager:
         else: 
             messages = self.history.get_message_for_api()
         #print("debug, messages: ", messages)
-        print("debug")
-        return None
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=messages,

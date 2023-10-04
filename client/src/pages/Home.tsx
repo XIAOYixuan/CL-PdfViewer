@@ -10,27 +10,6 @@ import { CurrentFileContext } from '../context/currentFile';
 import isPdf from '../utils/isPdf';
 import HtmlViewer from '../components/htmlViewer';
 
-function removeHighLight() {
-  const highLightElements = document.querySelectorAll('.hl-source');
-  highLightElements?.forEach((element) => {
-    element.classList.remove('hl-source');
-  });
-}
-
-function addHighLight(chunkId: string, time = 400) {
-  removeHighLight();
-  const firstElement = document.querySelector(`[data-chunk_id=${chunkId}]`);
-  setTimeout(() => {
-    firstElement?.scrollIntoView({ behavior: 'smooth' });
-  }, time);
-
-  const highLightElements = document.querySelectorAll(`[data-chunk_id=${chunkId}]`);
-
-  highLightElements?.forEach((element) => {
-    element.classList.add('hl-source');
-  });
-}
-
 async function downloadFile(fileItem: FileItem) {
   let res;
   if (isPdf(fileItem.ext)) {
@@ -69,16 +48,6 @@ const Home = () => {
   function handleHighLight(item: any, time = 400) {
     // we won't highlight srcs cuz we don't use the index mdl
     return;
-    if (isEmpty(item)) {
-      return;
-    }
-
-    // PDF
-    if (has(item.extraInfo, 'page_no')) {
-      eventEmitter.emit('scrollToPage', { pageNo: item.extraInfo.page_no, time });
-    } else {
-      addHighLight(item.extraInfo.chunk_id, time);
-    }
   }
 
   return (
