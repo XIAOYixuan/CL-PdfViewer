@@ -78,7 +78,13 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-4. Run Services
+4. Create db under static direction
+
+```
+mkdir -p server/static/db
+```
+
+5. Run Services
 
 ```
 flask run --reload --port=8080
